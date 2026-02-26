@@ -1,3 +1,9 @@
+name: event-driven-commerce-platform
+
+# =============================================================================
+# Infrastructure
+# =============================================================================
+
 services:
 
   postgres:
@@ -42,6 +48,10 @@ services:
       timeout: 10s
       retries: 5
 
+  # ===========================================================================
+  # Observability
+  # ===========================================================================
+
   prometheus:
     image: prom/prometheus:latest
     container_name: platform-prometheus
@@ -51,8 +61,8 @@ services:
     ports:
       - "9090:9090"
     command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
 
   tempo:
     image: grafana/tempo:latest
@@ -61,10 +71,10 @@ services:
       - ./tempo/tempo.yaml:/etc/tempo/tempo.yaml
       - tempo-data:/tmp/tempo
     ports:
-      - "3200:3200"   # Tempo API
-      - "4318:4318"   # OTLP HTTP
+      - "3200:3200"
+      - "4318:4318"
     command:
-      - '-config.file=/etc/tempo/tempo.yaml'
+      - "-config.file=/etc/tempo/tempo.yaml"
 
   grafana:
     image: grafana/grafana:latest
@@ -83,6 +93,10 @@ services:
     depends_on:
       - prometheus
       - tempo
+
+  # ===========================================================================
+  # Application Services
+  # ===========================================================================
 
   order-service:
     image: platform/order-service:latest
