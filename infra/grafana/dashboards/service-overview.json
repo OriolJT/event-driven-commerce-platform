@@ -1,0 +1,112 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "links": [],
+  "panels": [
+    {
+      "title": "Request Rate (per service)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "rate(http_server_requests_seconds_count{uri!~\"/actuator.*\"}[5m])",
+          "legendFormat": "{{application}} - {{uri}} {{method}}"
+        }
+      ]
+    },
+    {
+      "title": "Error Rate (5xx)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "targets": [
+        {
+          "expr": "rate(http_server_requests_seconds_count{status=~\"5..\"}[5m])",
+          "legendFormat": "{{application}} - {{uri}}"
+        }
+      ]
+    },
+    {
+      "title": "Latency p50 / p95 / p99",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 8 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, rate(http_server_requests_seconds_bucket{uri!~\"/actuator.*\"}[5m]))",
+          "legendFormat": "p50 - {{application}}"
+        },
+        {
+          "expr": "histogram_quantile(0.95, rate(http_server_requests_seconds_bucket{uri!~\"/actuator.*\"}[5m]))",
+          "legendFormat": "p95 - {{application}}"
+        },
+        {
+          "expr": "histogram_quantile(0.99, rate(http_server_requests_seconds_bucket{uri!~\"/actuator.*\"}[5m]))",
+          "legendFormat": "p99 - {{application}}"
+        }
+      ]
+    },
+    {
+      "title": "Orders Created / Confirmed / Cancelled",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 8, "x": 0, "y": 16 },
+      "targets": [
+        { "expr": "orders_created_total", "legendFormat": "Created" },
+        { "expr": "orders_confirmed_total", "legendFormat": "Confirmed" },
+        { "expr": "orders_cancelled_total", "legendFormat": "Cancelled" }
+      ]
+    },
+    {
+      "title": "Outbox Published Total",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 8, "x": 8, "y": 16 },
+      "targets": [
+        { "expr": "outbox_published_total", "legendFormat": "Published" }
+      ]
+    },
+    {
+      "title": "Payments Processed",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 8, "x": 16, "y": 16 },
+      "targets": [
+        { "expr": "payments_processed_total", "legendFormat": "{{outcome}}" }
+      ]
+    },
+    {
+      "title": "Kafka Consumer Lag",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 20 },
+      "targets": [
+        {
+          "expr": "kafka_consumer_fetch_manager_records_lag_max",
+          "legendFormat": "{{client_id}} - {{topic}}"
+        }
+      ]
+    },
+    {
+      "title": "Stock Reserved Total",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 12, "x": 0, "y": 28 },
+      "targets": [
+        { "expr": "stock_reserved_total", "legendFormat": "Reserved" }
+      ]
+    },
+    {
+      "title": "JVM Memory Used",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 32 },
+      "targets": [
+        {
+          "expr": "jvm_memory_used_bytes{area=\"heap\"}",
+          "legendFormat": "{{application}} - {{id}}"
+        }
+      ]
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["platform", "overview"],
+  "templating": { "list": [] },
+  "time": { "from": "now-1h", "to": "now" },
+  "title": "Platform Service Overview",
+  "uid": "platform-overview"
+}
