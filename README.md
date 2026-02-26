@@ -24,6 +24,7 @@
 - [Key Patterns & Design Decisions](#key-patterns--design-decisions)
 - [Project Structure](#project-structure)
 - [Getting Started](#getting-started)
+- [Demo](#demo)
 - [API Reference](#api-reference)
 - [Observability](#observability)
 - [Testing Strategy](#testing-strategy)
@@ -311,6 +312,23 @@ curl -s -X POST http://localhost:8081/api/orders \
 ```bash
 cd infra && docker compose down -v
 ```
+
+---
+
+## Demo
+
+See the **[full demo walkthrough](docs/demo.md)** for a step-by-step guide that covers:
+
+1. Creating an order and watching the saga complete
+2. Testing idempotency (cache hit + conflict detection)
+3. Triggering a stock rejection scenario
+4. Viewing the Grafana dashboard and distributed traces
+
+### Observability Screenshots
+
+| Grafana Dashboard | Distributed Trace (Tempo) |
+|:-:|:-:|
+| ![Dashboard](docs/assets/grafana-dashboard.png) | ![Trace](docs/assets/tempo-trace.png) |
 
 ---
 
