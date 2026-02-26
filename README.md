@@ -259,7 +259,9 @@ event-driven-commerce-platform/
 - **Maven 3.9+**
 - **Docker Desktop** with Docker Compose v2
 
-### Build & Run
+### Option A: Run with Docker Compose (recommended)
+
+Runs the full stack — Postgres, Kafka, 4 services, Prometheus, Grafana, and Tempo — in containers.
 
 ```bash
 # 1. Clone
@@ -272,9 +274,43 @@ mvn clean install -DskipTests
 # 3. Build Docker images (Jib — no Dockerfiles needed)
 mvn -pl services/order-service,services/payment-service,services/inventory-service,services/notification-service jib:dockerBuild
 
-# 4. Start the full stack (Postgres, Kafka, 4 services, Prometheus, Grafana, Tempo)
+# 4. Start the full stack
 cd infra && docker compose up -d
 ```
+
+Services are accessible at `localhost:8081` (order), `8082` (payment), `8083` (inventory), `8084` (notification). Each service activates the `docker` Spring profile via `SPRING_PROFILES_ACTIVE=docker`, which overrides hostnames to use container names (e.g., `kafka:9092`, `postgres:5432`).
+
+```bash
+# Shutdown and remove volumes
+cd infra && docker compose down -v
+```
+
+### Option B: Run locally (mvn spring-boot:run)
+
+Run services directly on your machine for rapid development. You still need Postgres and Kafka running — start only the infrastructure containers:
+
+```bash
+# Start Postgres, Kafka, and observability stack
+cd infra && docker compose up -d postgres kafka prometheus tempo grafana
+```
+
+Then start each service from the project root (each in a separate terminal):
+
+```bash
+mvn -pl services/order-service spring-boot:run -am
+mvn -pl services/payment-service spring-boot:run -am
+mvn -pl services/inventory-service spring-boot:run -am
+mvn -pl services/notification-service spring-boot:run -am
+```
+
+The default `application.yml` in each service uses `localhost` addresses (`localhost:29092` for Kafka, `localhost:5432` for Postgres) so no extra configuration is needed.
+
+| | Docker Compose | Local (mvn) |
+|---|---|---|
+| **Kafka** | `kafka:9092` | `localhost:29092` |
+| **Postgres** | `postgres:5432` | `localhost:5432` |
+| **Service ports** | 8081–8084 (mapped from 8080) | 8081–8084 (native) |
+| **Profile** | `docker` | default |
 
 ### Verify It Works
 
@@ -306,12 +342,6 @@ curl -s -X POST http://localhost:8081/api/orders \
     "currency": "EUR"
   }' | jq .
 # → Returns 200 (cache hit) with identical response body
-```
-
-### Shutdown
-
-```bash
-cd infra && docker compose down -v
 ```
 
 ---
