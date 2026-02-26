@@ -15,6 +15,7 @@ import java.util.Map;
 public class OutboxPublisher {
 
     private static final Logger log = LoggerFactory.getLogger(OutboxPublisher.class);
+    private static final long MAX_BACKOFF_MS = 30_000;
 
     private static final Map<String, String> AGGREGATE_TO_TOPIC = Map.of(
             "Order", "order-events"
@@ -23,6 +24,9 @@ public class OutboxPublisher {
     private final OutboxRepository outboxRepository;
     private final KafkaTemplate<String, String> kafkaTemplate;
     private final MeterRegistry meterRegistry;
+
+    private volatile int consecutiveFailures = 0;
+    private volatile long nextAllowedRunMs = 0;
 
     public OutboxPublisher(OutboxRepository outboxRepository,
                            KafkaTemplate<String, String> kafkaTemplate,
@@ -34,12 +38,22 @@ public class OutboxPublisher {
 
     @Scheduled(fixedDelay = 500)
     public void publishPendingEvents() {
+        if (System.currentTimeMillis() < nextAllowedRunMs) {
+            return;
+        }
+
         List<OutboxEvent> events = outboxRepository.findTop100ByPublishedFalseOrderByCreatedAtAsc();
         for (OutboxEvent event : events) {
             try {
                 publishSingleEvent(event);
+                consecutiveFailures = 0;
             } catch (Exception e) {
-                log.error("Failed to publish outbox event {}: {}", event.getId(), e.getMessage());
+                consecutiveFailures++;
+                long backoffMs = Math.min(500L * (1L << Math.min(consecutiveFailures, 6)), MAX_BACKOFF_MS);
+                nextAllowedRunMs = System.currentTimeMillis() + backoffMs;
+                meterRegistry.counter("outbox_publish_failures_total").increment();
+                log.warn("Kafka send failed, backing off for {}ms (consecutive failures: {})",
+                        backoffMs, consecutiveFailures);
                 break;
             }
         }
