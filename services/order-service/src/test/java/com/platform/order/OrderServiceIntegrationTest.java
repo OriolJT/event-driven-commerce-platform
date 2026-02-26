@@ -87,9 +87,8 @@ class OrderServiceIntegrationTest {
 
         // Verify outbox event created
         List<OutboxEvent> outboxEvents = outboxRepository.findByPublishedFalseOrderByCreatedAtAsc();
-        assertThat(outboxEvents).isNotEmpty();
-        assertThat(outboxEvents.get(0).getEventType()).isEqualTo("OrderCreated");
-        assertThat(outboxEvents.get(0).getAggregateId()).isEqualTo(response.id());
+        assertThat(outboxEvents).anyMatch(e ->
+                e.getEventType().equals("OrderCreated") && e.getAggregateId().equals(response.id()));
     }
 
     @Test
@@ -114,12 +113,12 @@ class OrderServiceIntegrationTest {
                 .andExpect(status().isCreated())
                 .andReturn();
 
-        // Second call with same key and payload
+        // Second call with same key and payload — returns 200 OK (cache hit)
         MvcResult second = mockMvc.perform(post("/api/orders")
                         .header("Idempotency-Key", idempotencyKey)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isCreated())
+                .andExpect(status().isOk())
                 .andReturn();
 
         // Should return same response

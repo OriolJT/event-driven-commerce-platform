@@ -1,6 +1,7 @@
 package com.platform.order.controller;
 
 import com.platform.order.dto.CreateOrderRequest;
+import com.platform.order.dto.CreateOrderResult;
 import com.platform.order.dto.OrderResponse;
 import com.platform.order.service.OrderService;
 import jakarta.validation.Valid;
@@ -23,13 +24,14 @@ public class OrderController {
 
     @PostMapping
     public ResponseEntity<OrderResponse> createOrder(
-            @RequestHeader("Idempotency-Key") String idempotencyKey,
+            @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
             @Valid @RequestBody CreateOrderRequest request) {
         if (idempotencyKey == null || idempotencyKey.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Idempotency-Key header is required");
         }
-        OrderResponse response = orderService.createOrder(request, idempotencyKey);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        CreateOrderResult result = orderService.createOrder(request, idempotencyKey);
+        HttpStatus status = result.fromCache() ? HttpStatus.OK : HttpStatus.CREATED;
+        return ResponseEntity.status(status).body(result.response());
     }
 
     @GetMapping("/{id}")

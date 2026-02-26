@@ -36,6 +36,9 @@ public class Order {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
+    @Version
+    private Long version;
+
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItem> items = new ArrayList<>();
 
@@ -57,9 +60,13 @@ public class Order {
         items.add(item);
     }
 
-    public void updateStatus(OrderStatus newStatus) {
+    public boolean updateStatus(OrderStatus newStatus) {
+        if (!this.status.canTransitionTo(newStatus)) {
+            return false;
+        }
         this.status = newStatus;
         this.updatedAt = Instant.now();
+        return true;
     }
 
     public UUID getId() { return id; }

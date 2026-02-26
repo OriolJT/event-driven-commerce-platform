@@ -10,6 +10,7 @@ import com.platform.events.order.OrderCreatedEvent;
 import com.platform.events.order.StockReleaseRequestedEvent;
 import com.platform.events.serde.EventObjectMapper;
 import com.platform.order.dto.CreateOrderRequest;
+import com.platform.order.dto.CreateOrderResult;
 import com.platform.order.dto.OrderResponse;
 import com.platform.order.entity.IdempotencyKeyEntity;
 import com.platform.order.entity.Order;
@@ -54,7 +55,7 @@ public class OrderService {
     }
 
     @Transactional
-    public OrderResponse createOrder(CreateOrderRequest request, String idempotencyKey) {
+    public CreateOrderResult createOrder(CreateOrderRequest request, String idempotencyKey) {
         String requestHash = hashRequest(request);
 
         var existing = idempotencyRepository.findById(idempotencyKey);
@@ -62,7 +63,9 @@ public class OrderService {
             IdempotencyKeyEntity entity = existing.get();
             if (entity.getRequestHash().equals(requestHash)) {
                 try {
-                    return EventObjectMapper.instance().readValue(entity.getResponseBody(), OrderResponse.class);
+                    OrderResponse cached = EventObjectMapper.instance().readValue(
+                            entity.getResponseBody(), OrderResponse.class);
+                    return new CreateOrderResult(cached, true);
                 } catch (JsonProcessingException e) {
                     throw new RuntimeException("Failed to deserialize cached response", e);
                 }
@@ -104,7 +107,7 @@ public class OrderService {
 
         meterRegistry.counter("orders_created_total").increment();
         log.info("Order created: id={}, status={}", order.getId(), order.getStatus());
-        return response;
+        return new CreateOrderResult(response, false);
     }
 
     @Transactional(readOnly = true)
@@ -119,7 +122,10 @@ public class OrderService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Order not found"));
         OrderStatus oldStatus = order.getStatus();
-        order.updateStatus(newStatus);
+        if (!order.updateStatus(newStatus)) {
+            log.warn("Order {} ignoring invalid transition: {} -> {}", orderId, oldStatus, newStatus);
+            return;
+        }
         orderRepository.save(order);
         log.info("Order {} status changed: {} -> {}", orderId, oldStatus, newStatus);
     }
@@ -128,7 +134,10 @@ public class OrderService {
     public void confirmOrder(UUID orderId) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Order not found"));
-        order.updateStatus(OrderStatus.CONFIRMED);
+        if (!order.updateStatus(OrderStatus.CONFIRMED)) {
+            log.warn("Order {} cannot be confirmed from status {}", orderId, order.getStatus());
+            return;
+        }
         orderRepository.save(order);
 
         OrderConfirmedEvent event = new OrderConfirmedEvent(orderId);
@@ -144,7 +153,10 @@ public class OrderService {
     public void cancelOrder(UUID orderId, String reason, boolean releaseStock) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Order not found"));
-        order.updateStatus(OrderStatus.CANCELLED);
+        if (!order.updateStatus(OrderStatus.CANCELLED)) {
+            log.warn("Order {} cannot be cancelled from status {}", orderId, order.getStatus());
+            return;
+        }
         orderRepository.save(order);
 
         OrderCancelledEvent cancelledEvent = new OrderCancelledEvent(orderId, reason);

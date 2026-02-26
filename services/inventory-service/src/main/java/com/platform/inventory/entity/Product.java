@@ -33,6 +33,9 @@ public class Product {
     }
 
     public void releaseStock(int quantity) {
+        if (quantity <= 0) {
+            throw new IllegalArgumentException("Release quantity must be positive");
+        }
         stock += quantity;
     }
 

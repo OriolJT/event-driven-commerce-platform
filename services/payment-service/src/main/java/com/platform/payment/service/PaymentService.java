@@ -82,9 +82,8 @@ public class PaymentService {
     }
 
     private boolean simulatePayment(UUID orderId) {
-        // Deterministic based on orderId hash for reproducibility
-        int hash = Math.abs(orderId.hashCode());
-        return (hash % 100) < (successRate * 100);
+        int hash = (orderId.hashCode() & 0x7FFFFFFF) % 100;
+        return hash < (successRate * 100);
     }
 
     private void saveOutboxEvent(String aggregateType, UUID aggregateId, String eventType, Object envelope) {

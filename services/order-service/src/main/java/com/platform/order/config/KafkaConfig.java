@@ -17,7 +17,7 @@ public class KafkaConfig {
     private static final Logger log = LoggerFactory.getLogger(KafkaConfig.class);
 
     @Bean
-    public CommonErrorHandler kafkaErrorHandler(KafkaTemplate<Object, Object> kafkaTemplate) {
+    public CommonErrorHandler kafkaErrorHandler(KafkaTemplate<?, ?> kafkaTemplate) {
         DeadLetterPublishingRecoverer recoverer = new DeadLetterPublishingRecoverer(kafkaTemplate,
                 (ConsumerRecord<?, ?> record, Exception ex) -> {
                     log.error("Sending record to DLT from topic {}: {}", record.topic(), ex.getMessage());

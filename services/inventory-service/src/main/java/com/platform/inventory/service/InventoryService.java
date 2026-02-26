@@ -61,8 +61,12 @@ public class InventoryService {
         boolean allReserved = true;
         String failureReason = null;
 
-        for (OrderLineItem item : items) {
-            Product product = productRepository.findById(item.productId()).orElse(null);
+        List<OrderLineItem> sortedItems = items.stream()
+                .sorted(java.util.Comparator.comparing(OrderLineItem::productId))
+                .toList();
+
+        for (OrderLineItem item : sortedItems) {
+            Product product = productRepository.findByIdForUpdate(item.productId()).orElse(null);
             if (product == null) {
                 allReserved = false;
                 failureReason = "Product not found: " + item.productId();
@@ -89,7 +93,7 @@ public class InventoryService {
         } else {
             // Rollback any reservations made so far
             for (Reservation res : reservations) {
-                Product product = productRepository.findById(res.getProductId()).orElseThrow();
+                Product product = productRepository.findByIdForUpdate(res.getProductId()).orElseThrow();
                 product.releaseStock(res.getQuantity());
                 productRepository.save(product);
             }
@@ -113,7 +117,7 @@ public class InventoryService {
 
         List<Reservation> reservations = reservationRepository.findByOrderIdAndStatus(orderId, "RESERVED");
         for (Reservation reservation : reservations) {
-            Product product = productRepository.findById(reservation.getProductId()).orElseThrow();
+            Product product = productRepository.findByIdForUpdate(reservation.getProductId()).orElseThrow();
             product.releaseStock(reservation.getQuantity());
             productRepository.save(product);
             reservation.release();

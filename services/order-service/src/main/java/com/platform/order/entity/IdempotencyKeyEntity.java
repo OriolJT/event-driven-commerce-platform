@@ -1,6 +1,8 @@
 package com.platform.order.entity;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -18,6 +20,7 @@ public class IdempotencyKeyEntity {
     @Column(name = "request_hash", nullable = false)
     private String requestHash;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "response_body", columnDefinition = "jsonb", nullable = false)
     private String responseBody;
 
