@@ -32,17 +32,20 @@ public class PaymentService {
     private final OutboxRepository outboxRepository;
     private final MeterRegistry meterRegistry;
     private final double successRate;
+    private final String forceOutcome;
 
     public PaymentService(PaymentRepository paymentRepository,
                           ProcessedEventRepository processedEventRepository,
                           OutboxRepository outboxRepository,
                           MeterRegistry meterRegistry,
-                          @Value("${payment.simulate.success-rate:0.8}") double successRate) {
+                          @Value("${payment.simulate.success-rate:0.8}") double successRate,
+                          @Value("${payment.simulate.force-outcome:}") String forceOutcome) {
         this.paymentRepository = paymentRepository;
         this.processedEventRepository = processedEventRepository;
         this.outboxRepository = outboxRepository;
         this.meterRegistry = meterRegistry;
         this.successRate = successRate;
+        this.forceOutcome = forceOutcome;
     }
 
     @Transactional
@@ -82,6 +85,14 @@ public class PaymentService {
     }
 
     private boolean simulatePayment(UUID orderId) {
+        if ("success".equalsIgnoreCase(forceOutcome)) {
+            log.info("Payment forced to SUCCESS for order {} (force-outcome=success)", orderId);
+            return true;
+        }
+        if ("failure".equalsIgnoreCase(forceOutcome)) {
+            log.info("Payment forced to FAILURE for order {} (force-outcome=failure)", orderId);
+            return false;
+        }
         int hash = (orderId.hashCode() & 0x7FFFFFFF) % 100;
         return hash < (successRate * 100);
     }
