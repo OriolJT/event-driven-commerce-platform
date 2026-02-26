@@ -102,11 +102,7 @@ services:
     image: platform/order-service:latest
     container_name: platform-order-service
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/orderdb
-      SPRING_DATASOURCE_USERNAME: platform
-      SPRING_DATASOURCE_PASSWORD: platform
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
-      MANAGEMENT_OTLP_TRACING_ENDPOINT: http://tempo:4318/v1/traces
+      SPRING_PROFILES_ACTIVE: docker
     ports:
       - "8081:8080"
     depends_on:
@@ -119,11 +115,7 @@ services:
     image: platform/payment-service:latest
     container_name: platform-payment-service
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/paymentdb
-      SPRING_DATASOURCE_USERNAME: platform
-      SPRING_DATASOURCE_PASSWORD: platform
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
-      MANAGEMENT_OTLP_TRACING_ENDPOINT: http://tempo:4318/v1/traces
+      SPRING_PROFILES_ACTIVE: docker
     ports:
       - "8082:8080"
     depends_on:
@@ -136,11 +128,7 @@ services:
     image: platform/inventory-service:latest
     container_name: platform-inventory-service
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/inventorydb
-      SPRING_DATASOURCE_USERNAME: platform
-      SPRING_DATASOURCE_PASSWORD: platform
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
-      MANAGEMENT_OTLP_TRACING_ENDPOINT: http://tempo:4318/v1/traces
+      SPRING_PROFILES_ACTIVE: docker
     ports:
       - "8083:8080"
     depends_on:
@@ -153,11 +141,7 @@ services:
     image: platform/notification-service:latest
     container_name: platform-notification-service
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/notificationdb
-      SPRING_DATASOURCE_USERNAME: platform
-      SPRING_DATASOURCE_PASSWORD: platform
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
-      MANAGEMENT_OTLP_TRACING_ENDPOINT: http://tempo:4318/v1/traces
+      SPRING_PROFILES_ACTIVE: docker
     ports:
       - "8084:8080"
     depends_on:

@@ -1,0 +1,13 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://postgres:5432/notificationdb
+  kafka:
+    bootstrap-servers: kafka:9092
+
+server:
+  port: 8080
+
+management:
+  otlp:
+    tracing:
+      endpoint: http://tempo:4318/v1/traces
