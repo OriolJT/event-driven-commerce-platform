@@ -16,6 +16,17 @@
 
 ---
 
+> ### What This Demonstrates
+>
+> - **Distributed saga choreography** across 4 microservices with automatic compensation
+> - **Zero data loss** via transactional outbox pattern — events survive Kafka outages
+> - **Exactly-once business semantics** with idempotency at API, consumer, and outbox layers
+> - **Full observability stack** — Prometheus metrics, Grafana dashboards, distributed tracing with Tempo
+> - **Production failure handling** — dead letter topics, pessimistic locking, state machine enforcement
+> - **Integration testing** with real Kafka and PostgreSQL via Testcontainers
+
+---
+
 ## Table of Contents
 
 - [Why This Project](#why-this-project)
@@ -492,6 +503,20 @@ If the publisher crashes before marking a row as `published`, the event is re-se
 
 Inventory service uses `SELECT ... FOR UPDATE` (pessimistic locking) with items sorted by `productId` to prevent deadlocks and ensure correct stock decrements under concurrency.
 </details>
+
+---
+
+## Use Case
+
+**Who would use this:** Backend teams building event-driven systems who need a reference implementation that goes beyond tutorials — covering the hard problems like failure compensation, duplicate prevention, and observability.
+
+**Where this fits:** This is the backbone of an e-commerce order fulfillment pipeline. In a real system, it would sit between the storefront API and the warehouse/shipping layer, handling the critical path of order → inventory → payment → notification.
+
+**Real-world scenarios this solves:**
+- Processing thousands of concurrent orders without overselling inventory
+- Recovering gracefully when a payment provider goes down mid-transaction
+- Providing ops teams with full visibility into order flow and bottlenecks
+- Preventing duplicate charges when network retries cause repeated requests
 
 ---
 
